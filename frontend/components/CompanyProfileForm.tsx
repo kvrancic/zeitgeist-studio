@@ -179,7 +179,7 @@ export default function CompanyProfileForm({ onSuccess }: CompanyProfileFormProp
             {...register('company_name')}
             type="text"
             className={cn(
-              'w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+              'w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900',
               errors.company_name ? 'border-red-500' : 'border-gray-300'
             )}
             placeholder="Enter your company name"
@@ -198,7 +198,7 @@ export default function CompanyProfileForm({ onSuccess }: CompanyProfileFormProp
             {...register('company_description')}
             rows={6}
             className={cn(
-              'w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+              'w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900',
               errors.company_description ? 'border-red-500' : 'border-gray-300'
             )}
             placeholder="Describe your company, products, mission, target audience, and unique value proposition..."
@@ -215,7 +215,7 @@ export default function CompanyProfileForm({ onSuccess }: CompanyProfileFormProp
           </label>
           <select
             {...register('brand_voice')}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
           >
             <option value={BrandVoice.PROFESSIONAL}>Professional</option>
             <option value={BrandVoice.CASUAL}>Casual</option>
@@ -236,7 +236,7 @@ export default function CompanyProfileForm({ onSuccess }: CompanyProfileFormProp
               {...register('brand_voice_custom')}
               rows={3}
               className={cn(
-                'w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+                'w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900',
                 errors.brand_voice_custom ? 'border-red-500' : 'border-gray-300'
               )}
               placeholder="Describe your custom brand voice (e.g., 'Witty and sarcastic like a late-night comedian, but informative...')"

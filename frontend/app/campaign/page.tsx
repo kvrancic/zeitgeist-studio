@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/lib/store';
 import { useEffect } from 'react';
+import CampaignGenerator from '@/components/CampaignGenerator';
+import type { CampaignRequest } from '@/lib/api';
 
 export default function CampaignPage() {
   const router = useRouter();
@@ -22,44 +24,49 @@ export default function CampaignPage() {
     return null; // Will redirect
   }
 
+  // Build campaign request from store data
+  const campaignRequest: CampaignRequest = {
+    company_name: profile.company_name,
+    company_description: profile.company_description,
+    brand_voice: profile.brand_voice,
+    trend_name: selectedTrend.trend_name,
+    trend_context: selectedTrend.description,
+    extracted_docs: profile.extracted_context,
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-12">
       <div className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="mb-8 text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Zeitgeist Studio</h1>
-            <p className="text-lg text-gray-600">Step 3: Generate Marketing Campaign</p>
-            <div className="mt-2 text-sm text-gray-500">
-              <p>Company: {profile.company_name}</p>
-              <p>Trend: {selectedTrend.trend_name}</p>
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Zeitgeist Studio</h1>
+          <p className="text-lg text-gray-600">Step 3: Generate Marketing Campaign</p>
+          <div className="mt-4 flex gap-4 justify-center items-center text-sm">
+            <div className="bg-white px-4 py-2 rounded-lg shadow">
+              <span className="text-gray-500">Company:</span>{' '}
+              <span className="font-semibold text-gray-900">{profile.company_name}</span>
             </div>
-          </div>
-
-          {/* Placeholder */}
-          <div className="bg-white rounded-lg shadow-lg p-12 text-center">
-            <div className="text-6xl mb-4">🎨</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Campaign Generator Coming Soon</h2>
-            <p className="text-gray-600 mb-6">
-              This is where the 3-agent pipeline will create your complete marketing campaign
-              with real-time progress updates.
-            </p>
-            <div className="flex gap-4 justify-center">
-              <button
-                onClick={() => router.push('/trends')}
-                className="px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                ← Change Trend
-              </button>
-              <button
-                className="px-6 py-3 bg-gray-300 rounded-lg font-medium text-gray-600 cursor-not-allowed"
-                disabled
-              >
-                Generate Campaign (Coming Soon)
-              </button>
+            <div className="bg-white px-4 py-2 rounded-lg shadow">
+              <span className="text-gray-500">Trend:</span>{' '}
+              <span className="font-semibold text-gray-900">{selectedTrend.trend_name}</span>
             </div>
+            <button
+              onClick={() => router.push('/trends')}
+              className="px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-white transition-colors"
+            >
+              ← Change Trend
+            </button>
           </div>
         </div>
+
+        {/* Campaign Generator */}
+        <CampaignGenerator
+          request={campaignRequest}
+          onComplete={(campaign) => {
+            console.log('Campaign generated:', campaign);
+            // Could save to store or navigate to results page
+          }}
+        />
       </div>
     </div>
   );

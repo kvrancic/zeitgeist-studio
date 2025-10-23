@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { searchTrends, submitManualTrend, Trend } from '@/lib/api';
 import { useAppStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
@@ -195,8 +197,10 @@ export default function TrendSelector({ onTrendSelected }: TrendSelectorProps) {
 
         {/* Search Context */}
         {searchContext && !error && (
-          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-900 text-sm">
-            {searchContext}
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-900 text-sm prose prose-sm max-w-none">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {searchContext}
+            </ReactMarkdown>
           </div>
         )}
       </div>
@@ -233,12 +237,20 @@ export default function TrendSelector({ onTrendSelected }: TrendSelectorProps) {
               </div>
 
               {/* Description */}
-              <p className="text-gray-700 mb-3">{trend.description}</p>
+              <div className="text-gray-700 mb-3 prose prose-sm max-w-none">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {trend.description}
+                </ReactMarkdown>
+              </div>
 
               {/* Why It's Hot */}
               <div className="bg-gray-50 rounded-lg p-3 mb-3">
                 <p className="text-sm font-semibold text-gray-900 mb-1">🔥 Why It's Hot:</p>
-                <p className="text-sm text-gray-700">{trend.why_its_hot}</p>
+                <div className="text-sm text-gray-700 prose prose-sm max-w-none">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {trend.why_its_hot}
+                  </ReactMarkdown>
+                </div>
               </div>
 
               {/* Target Audience */}

@@ -152,6 +152,38 @@ async def generate_campaign(request: CampaignRequest):
     )
 
 
+@router.get("/generate")
+async def generate_campaign_get(
+    company_name: str,
+    company_description: str,
+    brand_voice: str,
+    trend_name: str,
+    trend_context: str,
+    extracted_docs: Optional[str] = None
+):
+    """
+    GET version of campaign generation for EventSource compatibility.
+    Returns Server-Sent Events (SSE) stream of pipeline progress.
+    """
+    request = CampaignRequest(
+        company_name=company_name,
+        company_description=company_description,
+        brand_voice=brand_voice,
+        trend_name=trend_name,
+        trend_context=trend_context,
+        extracted_docs=extracted_docs
+    )
+
+    return StreamingResponse(
+        campaign_generator_stream(request),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        }
+    )
+
+
 @router.get("/status/{campaign_id}")
 async def get_campaign_status(campaign_id: str):
     """Get status of a campaign generation job."""
