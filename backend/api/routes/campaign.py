@@ -8,14 +8,16 @@ from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
 import json
 import asyncio
+import logging
 import sys
 import os
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from services.crew_service import MarketingCrew
+from services.campaign_service import get_campaign_service
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/campaign", tags=["campaign"])
 
 
@@ -44,67 +46,89 @@ async def campaign_generator_stream(request: CampaignRequest):
     """
     Stream campaign generation progress using Server-Sent Events (SSE).
     Yields JSON objects for each step of the pipeline.
+
+    Pipeline: Philosopher → Architect → Optimizer → Architect (final)
     """
 
+    async def progress_callback(data: Dict):
+        """Callback to stream progress updates."""
+        yield f"data: {json.dumps(data)}\n\n"
+        await asyncio.sleep(0.1)  # Small delay for browser to process
+
     try:
-        # Initialize marketing crew
-        crew = MarketingCrew(use_lite=False)
+        logger.info(f"Starting campaign generation for {request.company_name}")
 
-        # Step 1: Philosopher analyzes
-        yield f"data: {json.dumps({'step': 1, 'agent': 'philosopher', 'status': 'working', 'message': 'Zeitgeist Philosopher analyzing cultural trends...'})}\n\n"
-        await asyncio.sleep(0.5)  # Simulate work
+        # Get campaign service (use pro model for best results)
+        campaign_service = get_campaign_service(use_lite=False)
 
-        # TODO: Actually run philosopher analysis
-        # philosopher_output = crew.quick_analysis(request.trend_name)
-
-        yield f"data: {json.dumps({'step': 1, 'agent': 'philosopher', 'status': 'complete', 'message': 'Trend analysis complete'})}\n\n"
-
-        # Step 2: Architect creates
-        yield f"data: {json.dumps({'step': 2, 'agent': 'architect', 'status': 'working', 'message': 'Cynical Content Architect crafting content...'})}\n\n"
+        # Stream initial message
+        yield f"data: {json.dumps({'status': 'started', 'message': 'Initializing 3-agent pipeline...'})}\n\n"
         await asyncio.sleep(0.5)
 
-        yield f"data: {json.dumps({'step': 2, 'agent': 'architect', 'status': 'complete', 'message': 'Initial content created'})}\n\n"
+        # Generate campaign with streaming callbacks
+        # Note: We can't use async generator directly, so we'll collect updates
+        updates = []
 
-        # Step 3: Optimizer analyzes
-        yield f"data: {json.dumps({'step': 3, 'agent': 'optimizer', 'status': 'working', 'message': 'Brutalist Optimizer optimizing for conversion...'})}\n\n"
+        def sync_callback(data):
+            """Synchronous wrapper for updates."""
+            updates.append(data)
+
+        async def async_callback(data):
+            """Async callback for streaming."""
+            yield f"data: {json.dumps(data)}\n\n"
+
+        # Run campaign generation
+        # For streaming, we'll manually emit updates at each step
+
+        # Step 1: Philosopher
+        yield f"data: {json.dumps({'step': 1, 'agent': 'Zeitgeist Philosopher', 'status': 'working', 'message': 'Analyzing cultural drivers and psychological truths...'})}\n\n"
         await asyncio.sleep(0.5)
 
-        yield f"data: {json.dumps({'step': 3, 'agent': 'optimizer', 'status': 'complete', 'message': 'Optimization recommendations ready'})}\n\n"
-
-        # Step 4: Architect finalizes
-        yield f"data: {json.dumps({'step': 4, 'agent': 'architect', 'status': 'working', 'message': 'Creating final optimized content package...'})}\n\n"
+        # Step 2: Architect (initial)
+        yield f"data: {json.dumps({'step': 2, 'agent': 'Cynical Content Architect', 'status': 'working', 'message': 'Creating viral content and compelling narratives...'})}\n\n"
         await asyncio.sleep(0.5)
 
-        # TODO: Actually run full pipeline
-        # result = crew.analyze_trend(request.trend_name)
+        # Step 3: Optimizer
+        yield f"data: {json.dumps({'step': 3, 'agent': 'Brutalist Optimizer', 'status': 'working', 'message': 'Optimizing for SEO and conversion metrics...'})}\n\n"
+        await asyncio.sleep(0.5)
 
-        # Mock final output
+        # Step 4: Architect (final)
+        yield f"data: {json.dumps({'step': 4, 'agent': 'Final Content Polish', 'status': 'working', 'message': 'Architect creating final optimized campaign...'})}\n\n"
+        await asyncio.sleep(0.5)
+
+        # Actually run the pipeline
+        result = await campaign_service.generate_campaign(
+            company_name=request.company_name,
+            company_description=request.company_description,
+            brand_voice=request.brand_voice,
+            trend_name=request.trend_name,
+            trend_context=request.trend_context,
+            extracted_docs=request.extracted_docs
+        )
+
+        # Send final result
         final_output = {
-            "step": 4,
-            "agent": "architect",
             "status": "complete",
             "message": "Campaign generation complete!",
-            "data": {
-                "narrative": "# Campaign Narrative\n\nStrategic narrative would go here...",
-                "blog": "# Blog Post\n\nSEO-optimized blog content...",
-                "social_media": {
-                    "twitter": ["Tweet 1", "Tweet 2", "Tweet 3"],
-                    "instagram": ["IG caption 1", "IG caption 2"],
-                    "tiktok": ["TikTok concept 1", "TikTok concept 2"]
-                },
-                "tshirt_designs": [
-                    "Design 1: Visual description",
-                    "Design 2: Visual description"
-                ]
-            }
+            "data": result["campaign"]
         }
 
         yield f"data: {json.dumps(final_output)}\n\n"
 
-    except Exception as e:
+        logger.info("Campaign generation complete")
+
+    except ValueError as e:
+        # Configuration error (API keys missing)
+        logger.error(f"Configuration error: {e}")
         error_msg = {
-            "step": 0,
-            "agent": "system",
+            "status": "error",
+            "message": f"Service not configured: {str(e)}. Please set OPENROUTER_API_KEY and SERPER_API_KEY."
+        }
+        yield f"data: {json.dumps(error_msg)}\n\n"
+
+    except Exception as e:
+        logger.error(f"Campaign generation error: {e}", exc_info=True)
+        error_msg = {
             "status": "error",
             "message": f"Campaign generation failed: {str(e)}"
         }
