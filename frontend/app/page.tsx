@@ -1,4 +1,12 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useAppStore } from '@/lib/store';
+
 export default function Home() {
+  const router = useRouter();
+  const profile = useAppStore((state) => state.profile);
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <div className="container mx-auto px-4 py-16">
@@ -32,11 +40,14 @@ export default function Home() {
             <StatusItem status="complete" title="API Routes">
               Health, Profile, Trends, Campaign, Export endpoints
             </StatusItem>
-            <StatusItem status="in-progress" title="Frontend">
+            <StatusItem status="complete" title="Frontend">
               Next.js 14 + TypeScript + TailwindCSS setup complete
             </StatusItem>
-            <StatusItem status="pending" title="UI Components">
-              Building campaign generation interface
+            <StatusItem status="complete" title="Profile Management">
+              Company profile form with file upload working
+            </StatusItem>
+            <StatusItem status="in-progress" title="UI Components">
+              Building trend selector and campaign generator
             </StatusItem>
           </div>
         </div>
@@ -77,11 +88,14 @@ export default function Home() {
 
         {/* CTA Section */}
         <div className="max-w-4xl mx-auto mt-16 text-center">
-          <button className="bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-8 rounded-lg text-lg transition-colors shadow-lg">
-            Get Started (Coming Soon)
+          <button
+            onClick={() => router.push(profile ? '/trends' : '/profile')}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg text-lg transition-colors shadow-lg"
+          >
+            {profile ? 'Continue to Trends →' : 'Get Started →'}
           </button>
           <p className="mt-4 text-gray-500 dark:text-gray-400">
-            Currently in active development. Check back soon!
+            {profile ? `Welcome back, ${profile.company_name}!` : 'Create your company profile and start generating campaigns'}
           </p>
         </div>
       </div>
