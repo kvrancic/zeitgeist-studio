@@ -8,12 +8,14 @@ from typing import List, Optional
 from enum import Enum
 import sys
 import os
+import logging
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from services.crew_service import MarketingCrew
+from services.trend_service import get_trend_service
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/trends", tags=["trends"])
 
 
@@ -66,49 +68,53 @@ async def search_trends(request: TrendSearchRequest):
     """
     AI-powered trend discovery using Zeitgeist Philosopher agent.
     Searches web for trending topics relevant to the company.
+
+    Note: Requires OPENROUTER_API_KEY and SERPER_API_KEY in environment.
     """
 
     try:
-        # Initialize marketing crew with pro model
-        crew = MarketingCrew(use_lite=False)
+        logger.info(f"Starting trend search for {request.company_name}")
 
-        # TODO: Implement actual trend search with Philosopher
-        # For now, return mock data
+        # Get trend service (use pro model for better analysis)
+        trend_service = get_trend_service(use_lite=False)
 
-        mock_trends = [
+        # Discover trends using Philosopher agent
+        result = await trend_service.discover_trends(
+            company_name=request.company_name,
+            company_description=request.company_description,
+            industry=request.industry
+        )
+
+        # Convert parsed trends to Pydantic models
+        trends = [
             Trend(
-                trend_name="AI-Powered Personalization",
-                description="Consumers expect hyper-personalized experiences powered by AI across all touchpoints.",
-                why_its_hot="Desire for unique, tailored experiences that feel human despite automation.",
-                relevance_score=9,
-                opportunity_window=OpportunityWindow.PEAK_NOW,
-                target_audience="Tech-savvy consumers aged 25-45"
-            ),
-            Trend(
-                trend_name="Nostalgia for Analog",
-                description="Gen Z discovering film photography, vinyl records, and 'slow' experiences.",
-                why_its_hot="Rebellion against algorithmic feeds and infinite digital scroll.",
-                relevance_score=8,
-                opportunity_window=OpportunityWindow.GROWING,
-                target_audience="Gen Z and young millennials"
-            ),
-            Trend(
-                trend_name="Sustainability as Status",
-                description="Eco-friendly choices becoming the new luxury signaling.",
-                why_its_hot="Social pressure and genuine concern merge into purchasing behavior.",
-                relevance_score=7,
-                opportunity_window=OpportunityWindow.PEAK_NOW,
-                target_audience="Affluent consumers, all ages"
+                trend_name=t["trend_name"],
+                description=t["description"],
+                why_its_hot=t["why_its_hot"],
+                relevance_score=t["relevance_score"],
+                opportunity_window=OpportunityWindow(t["opportunity_window"]),
+                target_audience=t.get("target_audience")
             )
+            for t in result["trends"]
         ]
+
+        logger.info(f"Successfully discovered {len(trends)} trends")
 
         return TrendSearchResponse(
             success=True,
-            trends=mock_trends[:5],  # Return top 5
-            search_context=f"Analyzed trends for {request.company_name} in context of their market"
+            trends=trends,
+            search_context=result["search_context"]
         )
 
+    except ValueError as e:
+        # API key missing or validation error
+        logger.error(f"Configuration error: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail=f"Service not configured: {str(e)}. Please set OPENROUTER_API_KEY and SERPER_API_KEY."
+        )
     except Exception as e:
+        logger.error(f"Trend search failed: {e}")
         raise HTTPException(status_code=500, detail=f"Trend search failed: {str(e)}")
 
 
@@ -117,29 +123,70 @@ async def submit_manual_trend(request: ManualTrendRequest):
     """
     User submits a manual topic/trend.
     Philosopher agent provides quick analysis and enrichment.
+
+    Note: Uses lite model for faster response. Requires OPENROUTER_API_KEY and SERPER_API_KEY.
     """
 
     try:
-        # Initialize marketing crew
-        crew = MarketingCrew(use_lite=False)
+        logger.info(f"Analyzing manual trend: {request.topic}")
 
-        # TODO: Implement quick philosopher analysis
-        # For now, return enriched trend
+        # Get trend service (use lite model for quick analysis)
+        trend_service = get_trend_service(use_lite=True)
 
-        enriched_trend = Trend(
-            trend_name=request.topic,
-            description=f"Analysis of {request.topic} and its market relevance.",
-            why_its_hot="Based on current cultural and psychological drivers.",
-            relevance_score=7,
-            opportunity_window=OpportunityWindow.GROWING,
-            target_audience="To be determined based on campaign development"
+        # Build context if provided
+        search_context = f"""
+Topic/Trend: {request.topic}
+{f'Company Context: {request.company_context}' if request.company_context else ''}
+
+Provide a quick analysis of this trend including psychological drivers, target audience, and marketing potential.
+"""
+
+        # Discover trend analysis using Philosopher
+        result = await trend_service.discover_trends(
+            company_name="User Input",
+            company_description=search_context,
+            industry=None
         )
+
+        # Take the first trend or create one from the analysis
+        if result["trends"]:
+            trend_data = result["trends"][0]
+            # Override name with user's input
+            trend_data["trend_name"] = request.topic
+
+            enriched_trend = Trend(
+                trend_name=trend_data["trend_name"],
+                description=trend_data["description"],
+                why_its_hot=trend_data["why_its_hot"],
+                relevance_score=trend_data["relevance_score"],
+                opportunity_window=OpportunityWindow(trend_data["opportunity_window"]),
+                target_audience=trend_data.get("target_audience")
+            )
+        else:
+            # Fallback if no trends parsed
+            enriched_trend = Trend(
+                trend_name=request.topic,
+                description="Philosopher analysis completed. See full analysis for details.",
+                why_its_hot="Based on cultural and psychological analysis",
+                relevance_score=7,
+                opportunity_window=OpportunityWindow.GROWING,
+                target_audience="To be refined during campaign creation"
+            )
+
+        logger.info(f"Successfully analyzed manual trend: {request.topic}")
 
         return ManualTrendResponse(
             success=True,
             trend=enriched_trend,
-            analysis=f"Quick analysis completed for: {request.topic}"
+            analysis=result.get("raw_analysis", result["search_context"])[:1000]  # Truncate for response
         )
 
+    except ValueError as e:
+        logger.error(f"Configuration error: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail=f"Service not configured: {str(e)}. Please set OPENROUTER_API_KEY and SERPER_API_KEY."
+        )
     except Exception as e:
+        logger.error(f"Manual trend analysis failed: {e}")
         raise HTTPException(status_code=500, detail=f"Trend analysis failed: {str(e)}")
