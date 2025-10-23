@@ -7,7 +7,11 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 from enum import Enum
 import os
+import logging
 
+from services.document_service import get_document_service
+
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/profile", tags=["profile"])
 
 
@@ -58,11 +62,14 @@ async def create_profile(
     if len(company_description) < 100 or len(company_description) > 2000:
         raise HTTPException(status_code=400, detail="Description must be 100-2000 characters")
 
-    # Process uploaded files (will implement document extraction later)
+    # Process uploaded files with document extraction
     extracted_context = ""
     processed_files = []
 
     if files:
+        doc_service = get_document_service()
+        extracted_texts = []
+
         for file in files:
             if file.size > 5 * 1024 * 1024:  # 5MB limit
                 raise HTTPException(
@@ -70,8 +77,47 @@ async def create_profile(
                     detail=f"File {file.filename} exceeds 5MB limit"
                 )
 
-            # TODO: Implement document extraction (PDF, DOCX, TXT)
-            processed_files.append(file.filename)
+            # Check file type
+            allowed_extensions = ['.pdf', '.docx', '.txt']
+            file_ext = os.path.splitext(file.filename)[1].lower()
+            if file_ext not in allowed_extensions:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"File type {file_ext} not supported. Allowed: {', '.join(allowed_extensions)}"
+                )
+
+            # Extract text from document
+            try:
+                content = await file.read()
+                text = await doc_service.extract_text(content, file.filename)
+
+                if text:
+                    extracted_texts.append(text)
+                    processed_files.append(file.filename)
+                    logger.info(f"Extracted {len(text)} chars from {file.filename}")
+                else:
+                    logger.warning(f"No text extracted from {file.filename}")
+
+            except Exception as e:
+                logger.error(f"Error processing {file.filename}: {e}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to process {file.filename}: {str(e)}"
+                )
+
+        # Summarize all extracted texts into brand context
+        if extracted_texts:
+            try:
+                extracted_context = await doc_service.summarize_for_brand_context(
+                    extracted_texts,
+                    company_name,
+                    max_tokens=3000
+                )
+                logger.info(f"Summarized {len(extracted_texts)} documents into {len(extracted_context or '')} chars")
+            except Exception as e:
+                logger.error(f"Error summarizing documents: {e}")
+                # Continue without summary rather than failing
+                extracted_context = None
 
     # Create profile object
     profile = CompanyProfile(
