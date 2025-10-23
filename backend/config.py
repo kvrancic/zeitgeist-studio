@@ -30,10 +30,12 @@ class Settings(BaseSettings):
     serper_api_key: str = os.getenv("SERPER_API_KEY", "")
 
     # CORS Settings
-    allowed_origins: List[str] = os.getenv(
-        "ALLOWED_ORIGINS",
-        "http://localhost:3000,https://zeitgeist-studio.vercel.app"
-    ).split(",")
+    allowed_origins: str = "http://localhost:3000,https://zeitgeist-studio.vercel.app"
+
+    @property
+    def allowed_origins_list(self) -> List[str]:
+        """Parse CORS origins from comma-separated string."""
+        return [origin.strip() for origin in self.allowed_origins.split(",")]
 
     # File Upload Settings
     max_upload_size_mb: int = int(os.getenv("MAX_UPLOAD_SIZE_MB", "5"))

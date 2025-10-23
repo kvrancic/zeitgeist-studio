@@ -28,7 +28,7 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.allowed_origins,
+    allow_origins=settings.allowed_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -84,7 +84,7 @@ async def startup_event():
     try:
         settings.validate()
         logger.info("✓ Configuration validated")
-        logger.info(f"✓ CORS origins: {settings.allowed_origins}")
+        logger.info(f"✓ CORS origins: {settings.allowed_origins_list}")
         logger.info(f"✓ Upload directory: {settings.upload_dir}")
         logger.info(f"✓ Export directory: {settings.export_dir}")
         logger.info("✓ Zeitgeist Studio API is ready!")
