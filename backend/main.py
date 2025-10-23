@@ -34,8 +34,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Import routers (will be created next)
-# from api.routes import health, profile, trends, campaign, export
+# Import routers
+from api.routes import health, profile, trends, campaign, export
+
+# Include routers
+app.include_router(health.router)
+app.include_router(profile.router)
+app.include_router(trends.router)
+app.include_router(campaign.router)
+app.include_router(export.router)
 
 
 @app.get("/")
@@ -46,16 +53,13 @@ async def root():
         "version": "1.0.0",
         "status": "online",
         "docs": "/docs" if settings.debug else "disabled",
-    }
-
-
-@app.get("/api/health")
-async def health_check():
-    """Health check endpoint."""
-    return {
-        "status": "healthy",
-        "service": "zeitgeist-studio-backend",
-        "version": "1.0.0"
+        "endpoints": {
+            "health": "/api/health",
+            "profile": "/api/profile",
+            "trends": "/api/trends",
+            "campaign": "/api/campaign",
+            "export": "/api/export"
+        }
     }
 
 
