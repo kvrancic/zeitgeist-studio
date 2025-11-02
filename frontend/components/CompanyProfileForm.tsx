@@ -145,9 +145,10 @@ export default function CompanyProfileForm({ onSuccess }: CompanyProfileFormProp
       } else {
         setError('Failed to create profile. Please try again.');
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Profile creation error:', err);
-      setError(err.response?.data?.detail || err.message || 'An error occurred. Please try again.');
+      const error = err as { response?: { data?: { detail?: string } }; message?: string };
+      setError(error.response?.data?.detail || error.message || 'An error occurred. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
