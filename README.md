@@ -121,6 +121,24 @@ Visit [http://localhost:3000](http://localhost:3000)
 
 ---
 
+## 🚀 Deployment
+
+Ready to deploy? See the [Deployment Guide](./DEPLOYMENT.md) for step-by-step instructions on deploying to:
+- **Vercel** (Frontend) - Free tier available
+- **Railway** (Backend) - Starting at $5/month
+
+Quick deploy checklist:
+1. Get API keys: [OpenRouter](https://openrouter.ai) + [Serper](https://serper.dev)
+2. Push to GitHub
+3. Deploy backend to Railway
+4. Deploy frontend to Vercel
+5. Configure environment variables
+6. Done! 🎉
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions.
+
+---
+
 ## 📖 Usage
 
 ### Basic Workflow
@@ -180,9 +198,9 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 ## 📚 Documentation
 
+- [Deployment Guide](./DEPLOYMENT.md) ⭐
 - [API Documentation](./docs/api.md)
 - [Agent System Design](./docs/agents.md)
-- [Deployment Guide](./docs/deployment.md)
 - [Contributing Guidelines](./docs/contributing.md)
 
 ---
