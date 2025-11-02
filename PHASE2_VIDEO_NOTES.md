@@ -54,7 +54,7 @@ Karlo has **already built a complete video production pipeline** in the digital-
 
 ### 1. **Scene Description Generator**
 - Generates detailed 6-second scenes for video generation
-- Outputs JSON format ready for Veo3 API
+- Outputs JSON format ready for Veo3.1 API
 - Includes: camera movement, lighting, mood, color grading, inspiration
 - Multiple styles: cinematic, funny, hybrid chaos
 
