@@ -3,6 +3,7 @@
  */
 
 import axios, { AxiosInstance } from 'axios';
+import type { StreamingProgress, CampaignData } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -93,9 +94,9 @@ export interface CampaignRequest {
 
 export const generateCampaign = (
   request: CampaignRequest,
-  onProgress: (data: any) => void,
-  onComplete: (data: any) => void,
-  onError: (error: any) => void
+  onProgress: (data: StreamingProgress) => void,
+  onComplete: (data: StreamingProgress) => void,
+  onError: (error: Error | Event) => void
 ) => {
   const eventSource = new EventSource(
     `${API_URL}/api/campaign/generate?` + new URLSearchParams({
@@ -146,7 +147,7 @@ export const exportPDF = async (campaignId: string, narrative: string, companyNa
   return response.data;
 };
 
-export const exportZIP = async (campaignData: any) => {
+export const exportZIP = async (campaignData: CampaignData) => {
   const response = await api.post('/api/export/zip', campaignData, {
     responseType: 'blob',
   });
