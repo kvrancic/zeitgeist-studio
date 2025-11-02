@@ -1,0 +1,48 @@
+# Virtual environments
+.venv
+venv
+env
+ENV
+
+# Python cache
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache
+.coverage
+htmlcov
+
+# Documentation
+*.md
+BACKEND_SETUP.md
+
+# Logs
+*.log
+
+# Uploads and exports (should be ephemeral)
+uploads/*
+exports/*
+
+# Git
+.git
+.gitignore
