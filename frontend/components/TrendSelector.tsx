@@ -39,12 +39,13 @@ export default function TrendSelector({ onTrendSelected }: TrendSelectorProps) {
       const response = await searchTrends(profile);
       setTrends(response.trends);
       setSearchContext(response.search_context);
-    } catch (err: any) {
+    } catch (err) {
       console.error('AI trend search error:', err);
-      const errorMessage = err.response?.data?.detail || err.message || 'Failed to discover trends';
+      const error = err as { response?: { data?: { detail?: string }; status?: number }; message?: string };
+      const errorMessage = error.response?.data?.detail || error.message || 'Failed to discover trends';
 
       // Check if it's a configuration error (API keys missing)
-      if (err.response?.status === 503) {
+      if (error.response?.status === 503) {
         setError('⚠️ API keys not configured. AI trend search requires OPENROUTER_API_KEY and SERPER_API_KEY.');
       } else {
         setError(errorMessage);
@@ -76,11 +77,12 @@ export default function TrendSelector({ onTrendSelected }: TrendSelectorProps) {
       const response = await submitManualTrend(manualTopic, profile?.company_description);
       setTrends([response.trend]);
       setSearchContext(response.analysis);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Manual trend submission error:', err);
-      const errorMessage = err.response?.data?.detail || err.message || 'Failed to analyze trend';
+      const error = err as { response?: { data?: { detail?: string }; status?: number }; message?: string };
+      const errorMessage = error.response?.data?.detail || error.message || 'Failed to analyze trend';
 
-      if (err.response?.status === 503) {
+      if (error.response?.status === 503) {
         setError('⚠️ API keys not configured. Trend analysis requires OPENROUTER_API_KEY and SERPER_API_KEY.');
       } else {
         setError(errorMessage);
@@ -245,7 +247,7 @@ export default function TrendSelector({ onTrendSelected }: TrendSelectorProps) {
 
               {/* Why It's Hot */}
               <div className="bg-gray-50 rounded-lg p-3 mb-3">
-                <p className="text-sm font-semibold text-gray-900 mb-1">🔥 Why It's Hot:</p>
+                <p className="text-sm font-semibold text-gray-900 mb-1">🔥 Why It&apos;s Hot:</p>
                 <div className="text-sm text-gray-700 prose prose-sm max-w-none">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {trend.why_its_hot}
