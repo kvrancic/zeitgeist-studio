@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { generateCampaign, type CampaignRequest } from '@/lib/api';
+import type { CampaignRequest } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import type { CampaignData } from '@/lib/types';
 
 interface Agent {
   id: number;
@@ -47,7 +48,7 @@ const AGENTS: Agent[] = [
 
 interface CampaignGeneratorProps {
   request: CampaignRequest;
-  onComplete?: (campaign: any) => void;
+  onComplete?: (campaign: CampaignData) => void;
 }
 
 interface ProgressUpdate {
@@ -55,18 +56,16 @@ interface ProgressUpdate {
   agent?: string;
   status: 'started' | 'working' | 'complete' | 'error';
   message: string;
-  data?: any;
+  data?: CampaignData;
 }
 
 export default function CampaignGenerator({ request, onComplete }: CampaignGeneratorProps) {
-  const [isGenerating, setIsGenerating] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [progress, setProgress] = useState<ProgressUpdate[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [campaign, setCampaign] = useState<any>(null);
+  const [campaign, setCampaign] = useState<CampaignData | null>(null);
 
   const startGeneration = async () => {
-    setIsGenerating(true);
     setError(null);
     setProgress([]);
     setCampaign(null);
@@ -95,28 +94,24 @@ export default function CampaignGenerator({ request, onComplete }: CampaignGener
 
         if (data.status === 'complete' && data.data) {
           setCampaign(data.data);
-          setIsGenerating(false);
           eventSource.close();
           if (onComplete) onComplete(data.data);
         }
 
         if (data.status === 'error') {
           setError(data.message);
-          setIsGenerating(false);
           eventSource.close();
         }
       };
 
-      eventSource.onerror = (err) => {
-        console.error('SSE Error:', err);
+      eventSource.onerror = () => {
         setError('Connection to server lost. Please try again.');
-        setIsGenerating(false);
         eventSource.close();
       };
-    } catch (err: any) {
-      console.error('Campaign generation error:', err);
-      setError(err.message || 'Failed to generate campaign');
-      setIsGenerating(false);
+    } catch (err) {
+      const error = err as Error;
+      console.error('Campaign generation error:', error);
+      setError(error.message || 'Failed to generate campaign');
     }
   };
 
@@ -299,7 +294,7 @@ export default function CampaignGenerator({ request, onComplete }: CampaignGener
                 {sections.narrative && (
                   <div className="bg-white rounded-lg shadow-lg p-6">
                     <h3 className="text-xl font-bold text-gray-900 mb-4">📖 Campaign Narrative</h3>
-                    <div className="prose prose-lg max-w-none">
+                    <div className="prose prose-lg max-w-none text-gray-900">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{sections.narrative}</ReactMarkdown>
                     </div>
                   </div>
@@ -309,7 +304,7 @@ export default function CampaignGenerator({ request, onComplete }: CampaignGener
                 {sections.blog && (
                   <div className="bg-white rounded-lg shadow-lg p-6">
                     <h3 className="text-xl font-bold text-gray-900 mb-4">📝 Blog Post</h3>
-                    <div className="prose prose-lg max-w-none">
+                    <div className="prose prose-lg max-w-none text-gray-900">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{sections.blog}</ReactMarkdown>
                     </div>
                   </div>
@@ -319,7 +314,7 @@ export default function CampaignGenerator({ request, onComplete }: CampaignGener
                 {sections.social_media && (
                   <div className="bg-white rounded-lg shadow-lg p-6">
                     <h3 className="text-xl font-bold text-gray-900 mb-4">📱 Social Media Posts</h3>
-                    <div className="prose prose-lg max-w-none">
+                    <div className="prose prose-lg max-w-none text-gray-900">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{sections.social_media}</ReactMarkdown>
                     </div>
                   </div>
@@ -329,7 +324,7 @@ export default function CampaignGenerator({ request, onComplete }: CampaignGener
                 {sections.tshirt_designs && (
                   <div className="bg-white rounded-lg shadow-lg p-6">
                     <h3 className="text-xl font-bold text-gray-900 mb-4">👕 T-Shirt Designs</h3>
-                    <div className="prose prose-lg max-w-none">
+                    <div className="prose prose-lg max-w-none text-gray-900">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{sections.tshirt_designs}</ReactMarkdown>
                     </div>
                   </div>
@@ -339,7 +334,7 @@ export default function CampaignGenerator({ request, onComplete }: CampaignGener
                 {!sections.narrative && !sections.blog && (
                   <div className="bg-white rounded-lg shadow-lg p-6">
                     <h3 className="text-xl font-bold text-gray-900 mb-4">📄 Complete Campaign</h3>
-                    <div className="prose prose-lg max-w-none">
+                    <div className="prose prose-lg max-w-none text-gray-900">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{sections.full}</ReactMarkdown>
                     </div>
                   </div>

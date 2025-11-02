@@ -38,10 +38,18 @@ export const AGENT_DESCRIPTIONS = {
   [AgentStep.ARCHITECT_FINAL]: 'Polishing final campaign content...',
 };
 
+export interface CampaignData {
+  narrative?: string;
+  blog?: string;
+  social_media?: string;
+  tshirt_designs?: string;
+  full_output?: string;
+}
+
 export interface StreamingProgress {
   step: number;
   agent: string;
   status: 'working' | 'complete' | 'error';
   message: string;
-  data?: any;
+  data?: CampaignData;
 }
